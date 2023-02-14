@@ -239,6 +239,34 @@ def change_all_lj(target, change, nonbond_params):
         print(' >>> SUCCESS: LJ level of all {tg} interactions changed by {chg}'.format(tg=target, chg=str(change)))
 
 
+def change_all_mod_lj(target, change, atom_types, nonbond_params):
+    success = False
+    for nonbond in nonbond_params:
+        if nonbond.i == target or nonbond.j == target:
+            i_mod, j_mod = False, False
+            for atom_type in atom_types:
+                if atom_type.name == nonbond.i and atom_type.user == True:
+                    i_mod = True
+                if atom_type.name == nonbond.j and atom_type.user == True:
+                    j_mod = True
+            if i_mod == True and j_mod == True:   
+                if nonbond.lj_change == False:
+                    new_level = nonbond.level + change
+                    if new_level < 0:
+                        new_level = 0
+                    elif new_level > 9:
+                        new_level = 9
+                    nonbond.level = new_level
+                    success = True
+                    nonbond.lj_change = True
+                else:
+                    print('     ({tgi} {tgj} interaction has already been modified)'.format(tgi=nonbond.i, tgj=nonbond.j))
+    if success == False:
+        print(' >>> ERROR: atom {tg} does not exist'.format(tg=target))
+    else:
+        print(' >>> SUCCESS: LJ level of {tg} interactions with modified bead types changed by {chg}'.format(tg=target, chg=str(change)))
+
+
 def write_atom_type(atom_type, file):
     file.write(' '.join([atom_type.name, str(atom_type.mass), str(atom_type.charge), atom_type.ptype, str(atom_type.c6), str(atom_type.c12)]) + '\n')
 
@@ -356,6 +384,8 @@ def help():
             NONBONDS:       b (<atom> to get atom specific terms)
             EPS, S:         params
             CHANGE LJ:      lj <atomi> <atomj> <new level>
+            CHANGE ALL LJ:  all_lj <atom> <new level>
+            CHANGE MOD LJ:  all_mod_lj <atom> <new level>
             WRITE:          w <filename>
             HELP:           h
             """)
@@ -375,7 +405,7 @@ def run(itp_file):
             for i, atom_type in enumerate(atom_types):
                 print('\t'.join(['\t' + str(i)+'>', atom_type.name]))
         # BONDS
-        elif cmd[0] == 'b':
+        elif len(cmd) >= 1 and cmd[0] == 'b':
             if len(cmd) == 1:
                 for i, bond in enumerate(nonbond_params):
                     print('\t'.join(['\t' + str(i)+'>', bond.i, bond.j, roman_num[bond.level]]))
@@ -397,6 +427,9 @@ def run(itp_file):
         # MODIFY ALL LJ
         elif len(cmd) == 3 and cmd[0] == 'all_lj':
             change_all_lj(cmd[1],  int(cmd[2]), nonbond_params)
+        # MODIFY ALL MOD LJ
+        elif len(cmd) == 3 and cmd[0] == 'all_mod_lj':
+            change_all_mod_lj(cmd[1], int(cmd[2]), atom_types, nonbond_params)
         # WRITE
         elif len(cmd) == 2 and cmd[0] == 'w':
             write(atom_types, nonbond_params, cmd[1])
