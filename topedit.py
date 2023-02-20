@@ -285,6 +285,7 @@ def write(atom_types, nonbond_params, outdir):
     default_atom_types = []
     custom_self_nonbond_params = []
     default_self_nonbond_params = []
+    custom_custom_nonbond_params = []
     custom_nonbond_params = []
     default_nonbond_params = []
     for atom_type in atom_types:
@@ -300,7 +301,16 @@ def write(atom_types, nonbond_params, outdir):
                 default_self_nonbond_params.append(nonbond)
         else:
             if nonbond.user == True:
-                custom_nonbond_params.append(nonbond)
+                i_mod, j_mod = False, False
+                for atom_type in atom_types:
+                    if atom_type.name == nonbond.i and atom_type.user == True:
+                        i_mod = True
+                    if atom_type.name == nonbond.j and atom_type.user == True:
+                        j_mod = True
+                if i_mod == True and j_mod == True:
+                    custom_custom_nonbond_params.append(nonbond)
+                else:
+                    custom_nonbond_params.append(nonbond)
             else:
                 default_nonbond_params.append(nonbond)
     
@@ -344,11 +354,14 @@ def write(atom_types, nonbond_params, outdir):
         f.write("\n; ====== CUSTOM SELF TERMS ======\n")
         for nonbond in custom_self_nonbond_params:
             write_nonbond_params(nonbond, f)
-        f.write("\n; ====== default self terms ======\n")
-        for nonbond in default_self_nonbond_params:
+        f.write("\n; ====== CUSTOM CUSTOM CROSS TERMS ======\n")
+        for nonbond in custom_custom_nonbond_params:
             write_nonbond_params(nonbond, f)
         f.write("\n; ====== CUSTOM CROSS TERMS ======\n")
         for nonbond in custom_nonbond_params:
+            write_nonbond_params(nonbond, f)
+        f.write("\n; ====== default self terms ======\n")
+        for nonbond in default_self_nonbond_params:
             write_nonbond_params(nonbond, f)
         f.write("\n; ====== default cross terms ======\n")
         for nonbond in default_nonbond_params:
